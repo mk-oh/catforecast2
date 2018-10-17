@@ -1,11 +1,9 @@
-## TS analysis using catboost
-
-
+# forecast_catboost
+Time-series modeling with catboost ( R Ver. )
 
 ## Installation
 Testing Pkg
 ```r
-library('devtools')
-install_github("mk-oh/forecast_catboost2")
+devtools::install_github("mk-oh/forecast_catboost")
 ```
 
