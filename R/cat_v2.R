@@ -162,6 +162,7 @@ cat.forecast <- function (y,
                     l2_leaf_reg = 0.9,
                     bagging_temperature = 0.9,
                     # random_strength = 1,
+                    random_seed = 1,
                     nan_mode = 'Min',
                     od_type = 'Iter')
   }
