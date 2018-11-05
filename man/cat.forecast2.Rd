@@ -34,7 +34,7 @@ cat.forecast2(y, h = 42, xreg = NULL, pred_xreg = NULL,
 time-seires data forecast
 }
 \description{
-\code{cat.forecast} Analysis/Forecast Using Catboost
+\code{cat.forecast2} Analysis/Forecast Using Catboost. _Add non-selling cnt
 }
 \examples{
 cat.forecast(AirPassengers)
