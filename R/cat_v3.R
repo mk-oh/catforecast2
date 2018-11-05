@@ -65,7 +65,7 @@ cat.forecast2 <- function (y,
       non_sale_day[i] <- sum(non_sale[c((i - 14L) : i) ] , na.rm =T) # priod
     }
   }
-
+  non_sale_day <- non_sale_day[-c(1:maxlag)]
 
 
   #### Outlier preprocess - (require : forecast package)
@@ -161,20 +161,19 @@ cat.forecast2 <- function (y,
                      paste0("season", 2:f))
   }
 
+
+  x <- cbind( x, non_sale_day )
+
   if (!is.null(xreg)) {
-    x <- cbind(x, origxreg[-c(1:maxlag)] )
+    x <- cbind(x, origxreg[-c(1:maxlag),] )
   }
 
 
 
-  ###############################################################    ###############################################################    ###############################################################
-
-  x <- cbind( x, non_sale_day[-(1:maxlag)] )
-
-  ###############################################################    ###############################################################    ###############################################################
+###############################################################
 
 
-
+###############################################################
 
   #---- Make temp data
   x_temp <- x    # timelag + xreg
@@ -201,7 +200,7 @@ cat.forecast2 <- function (y,
       message("Start Validation")
     }
 
-    n <- length(y2);
+        n <- length(y2)
     split_n <- round(0.8 * n)
     #----  Setup Test Set
     test_x <- x[1:split_n, ] %>% as.matrix
@@ -226,7 +225,6 @@ cat.forecast2 <- function (y,
 
   if (!is.null(pred_xreg)) {
     xreg3 <- as.matrix(pred_xreg)
-
   } else {
     # xreg3 <- matrix(data = 0, nrow = h, ncol = 1)
     xreg3 <- NULL
@@ -235,18 +233,22 @@ cat.forecast2 <- function (y,
 
   rollup_cat <- function(x = x, y = y, model, xregpred, i,
                          f = 7) {
-    newrow <- c(y[length(y)], x[nrow(x), -maxlag])[c(1:maxlag)]
 
+    newrow <- c(y[length(y)], x[nrow(x),c(1:maxlag-1) ])
 
     if (f > 1 & season_type == "dummy") {
-      newrow <- c(newrow, x[(nrow(x) + 1 - f), c((maxlag +
-                                                    1):(maxlag + f - 1))])
+      newrow <- c(newrow,
+                  x[(nrow(x) + 1 - f), c((maxlag + 1):(maxlag + f - 1))],0)
     }
     if (!is.null(xregpred)) {
       newrow <- c(newrow, xregpred)
     }
+
+    # if (is.null(xregpred)) {
+    #   newrow <- cbind(newrow,0)
+    # }
+
     newrow <- matrix(newrow, nrow = 1)
-    newrow <- cbind(newrow,0)
     # colnames(newrow) <- colnames(x)
     pred_pool <- catboost.load_pool(newrow)
     pred <- catboost.predict(model, pred_pool)
@@ -260,12 +262,11 @@ y <- y2_temp
 
 if (!is.null(pred_xreg) ) {
   h = nrow(pred_xreg)
-  if(is.null(h)){
-    h = length(pred_xreg)
   } else {
     h = h
   }
-}
+
+
 
 for (i in 1:h) {
   tmp <-  rollup_cat(x, y,
