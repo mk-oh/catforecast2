@@ -182,7 +182,7 @@ cat.forecast2 <- function (y,
   #
   #### Parameter Setting - catboost
   if (is.null(params)) {
-    params =   list(iterations = 10,
+    params =   list(iterations = 1000,
                     depth = 6,
                     learning_rate = 0.02,
                     l2_leaf_reg = 0.9,
