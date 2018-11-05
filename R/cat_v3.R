@@ -1,6 +1,6 @@
 #' The analysis using Catboost
 #'
-#'\code{cat.forecast} Analysis/Forecast Using Catboost
+#'\code{cat.forecast2} Analysis/Forecast Using Catboost. _Add non-selling cnt
 #'
 #' @param y input time-seires vector
 #' @param h forecast preiod
@@ -18,9 +18,9 @@
 #' @export
 #'
 #' @examples
-#' cat.forecast(AirPassengers)
+#' cat.forecast2(AirPassengers)
 
-cat.forecast <- function (y,
+cat.forecast2 <- function (y,
                           h = 42,
                           xreg = NULL,
                           pred_xreg = NULL,
@@ -37,7 +37,7 @@ cat.forecast <- function (y,
 
   season_type = match.arg(season_type)
 
-  ###### Check Data format
+  #---- Check Data format
   if (!"ts" %in% class(y)) {
     stop("y class check : y need to ts class")
   }
@@ -50,6 +50,22 @@ cat.forecast <- function (y,
         stop("xreg check : class is numeric vector or a matrix")
       }
     }
+
+  oriny <- y
+
+  #---- Making Non-selling Data
+  non_sale <- ifelse(as.vector(y) == 0 , 1 , 0) # checking non_date
+
+  non_sale_day <- NA
+
+  for ( i in 1L : length(y) ){
+    if ( i <= 14L  ) { # priod +1
+      non_sale_day[i] <- sum(non_sale[c(1L : i)] , na.rm =T)
+    } else {
+      non_sale_day[i] <- sum(non_sale[c((i - 14L) : i) ] , na.rm =T) # priod
+    }
+  }
+
 
 
   #### Outlier preprocess - (require : forecast package)
@@ -64,7 +80,7 @@ cat.forecast <- function (y,
   orig_n <- length(y)
 
   #### Check a length of y
-  if (orig_n < 46) {
+  if (orig_n < 46L) {
     stop("must be data length > 45")
   }
 
@@ -146,8 +162,18 @@ cat.forecast <- function (y,
   }
 
   if (!is.null(xreg)) {
-    x <- cbind(x, origxreg[-c(1:maxlag), ] )
+    x <- cbind(x, origxreg[-c(1:maxlag)] )
   }
+
+
+
+  ###############################################################    ###############################################################    ###############################################################
+
+  x <- cbind( x, non_sale_day[-(1:maxlag)] )
+
+  ###############################################################    ###############################################################    ###############################################################
+
+
 
 
   #---- Make temp data
@@ -156,13 +182,12 @@ cat.forecast <- function (y,
   #
   #### Parameter Setting - catboost
   if (is.null(params)) {
-    params =   list(iterations = 1000,
+    params =   list(iterations = 10,
                     depth = 6,
                     learning_rate = 0.02,
                     l2_leaf_reg = 0.9,
                     bagging_temperature = 0.9,
                     # random_strength = 1,
-                    random_seed = 1,
                     nan_mode = 'Min',
                     od_type = 'Iter')
   }
@@ -198,86 +223,78 @@ cat.forecast <- function (y,
 
   #### PREDICTION
 
+
   if (!is.null(pred_xreg)) {
-    xreg3 <- as.matrix(pred_xreg)
+    xreg3 <- as.matrix(cbind(0, pred_xreg))
+
   } else {
-    xreg3 <- NULL
+    # xreg3 <- matrix(data = 0, nrow = h, ncol = 1)
+    xreg3 <- matrix(rep(0,h))
   }
 
-  rollup_cat <- function(x = x, y = y,
-                         model, xregpred,  i, f = 7) {
-    newrow <- c(y[length(y)],
-                x[nrow(x), -maxlag]
-    )[c(1:maxlag)]  # make Vector (last row)
 
-
-    if (f > 1 &season_type == "dummy") {
-      newrow <- c(newrow,
-                  x[(nrow(x) + 1 - f),
-                    c((maxlag + 1):(maxlag + f -1))]
-      )
+  rollup_cat <- function(x = x, y = y, model, xregpred, i,
+                         f = 7) {
+    newrow <- c(y[length(y)], x[nrow(x), -maxlag])[c(1:maxlag)]
+    if (f > 1 & season_type == "dummy") {
+      newrow <- c(newrow, x[(nrow(x) + 1 - f), c((maxlag +
+                                                    1):(maxlag + f - 1))])
     }
-
-
     if (!is.null(xregpred)) {
       newrow <- c(newrow, xregpred)
     }
     newrow <- matrix(newrow, nrow = 1)
     colnames(newrow) <- colnames(x)
-
-    # Predict with Cat. Model
     pred_pool <- catboost.load_pool(newrow)
     pred <- catboost.predict(model, pred_pool)
-
-    return(list(x = rbind(x, newrow),
-                y = c(y, pred))
-    )
+    return(list(x = rbind(x, newrow), y = c(y, pred)))
   }
 
-  x <- x_temp
-  y <- y2_temp
-  #
-  #### predict - rollup ts
+x <- x_temp
+y <- y2_temp
+#
+#### predict - rollup ts
 
-  if (!is.null(pred_xreg) ) {
-    h = nrow(pred_xreg)
-    if(is.null(h)){
-      h = length(pred_xreg)
-    } else {
-      h = h
-    }
+if (!is.null(pred_xreg) ) {
+  h = nrow(pred_xreg)
+  if(is.null(h)){
+    h = length(pred_xreg)
+  } else {
+    h = h
   }
-
-  for (i in 1:h) {
-    tmp <-  rollup_cat(x, y,
-                       model = model,
-                       xregpred = xreg3[i, ],
-                       i = i,
-                       f= f )
-    x <- tmp$x
-    y <- tmp$y
-  }
-
-  pred_y <- ts(y[-(1:length(y2))],
-               frequency = f,
-               start = max(time(y)) + 1/f)
-
-  if (season_type == "decompose") {
-    season_value <- utils::tail(decomp$seasonal, f)
-    if (h < f) {
-      season_value <- season_value[1:h]
-    } else {
-      pred_y <- pred_y * as.vector(season_value)
-    }
-  }
-
-  result_y <- InvBoxcox(pred_y, lambda = lambda)
-
-  # if (log == TRUE) {
-  #   result_y <- expm1(result_y)
-  # }
-
-
-  output <- round(result_y)
-  return(output)
 }
+
+for (i in 1:h) {
+  tmp <-  rollup_cat(x, y,
+                     model = model,
+                     xregpred = xreg3[i, ],
+                     i = i,
+                     f= f )
+  x <- tmp$x
+  y <- tmp$y
+}
+
+pred_y <- ts(y[-(1:length(y2))],
+             frequency = f,
+             start = max(time(y)) + 1/f)
+
+if (season_type == "decompose") {
+  season_value <- utils::tail(decomp$seasonal, f)
+  if (h < f) {
+    season_value <- season_value[1:h]
+  } else {
+    pred_y <- pred_y * as.vector(season_value)
+  }
+}
+
+result_y <- InvBoxcox(pred_y, lambda = lambda)
+
+# if (log == TRUE) {
+#   result_y <- expm1(result_y)
+# }
+
+
+output <- round(result_y)
+return(output)
+}
+
