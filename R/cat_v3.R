@@ -182,7 +182,7 @@ cat.forecast2 <- function (y,
   #
   #### Parameter Setting - catboost
   if (is.null(params)) {
-    params =   list(iterations = 1000,
+    params =   list(iterations = 10,
                     depth = 6,
                     learning_rate = 0.02,
                     l2_leaf_reg = 0.9,
@@ -225,17 +225,19 @@ cat.forecast2 <- function (y,
 
 
   if (!is.null(pred_xreg)) {
-    xreg3 <- as.matrix(cbind(0, pred_xreg))
+    xreg3 <- as.matrix(pred_xreg)
 
   } else {
     # xreg3 <- matrix(data = 0, nrow = h, ncol = 1)
-    xreg3 <- matrix(rep(0,h))
+    xreg3 <- NULL
   }
 
 
   rollup_cat <- function(x = x, y = y, model, xregpred, i,
                          f = 7) {
     newrow <- c(y[length(y)], x[nrow(x), -maxlag])[c(1:maxlag)]
+
+
     if (f > 1 & season_type == "dummy") {
       newrow <- c(newrow, x[(nrow(x) + 1 - f), c((maxlag +
                                                     1):(maxlag + f - 1))])
@@ -244,7 +246,8 @@ cat.forecast2 <- function (y,
       newrow <- c(newrow, xregpred)
     }
     newrow <- matrix(newrow, nrow = 1)
-    colnames(newrow) <- colnames(x)
+    newrow <- cbind(newrow,0)
+    # colnames(newrow) <- colnames(x)
     pred_pool <- catboost.load_pool(newrow)
     pred <- catboost.predict(model, pred_pool)
     return(list(x = rbind(x, newrow), y = c(y, pred)))
