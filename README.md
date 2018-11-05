@@ -4,6 +4,6 @@ Time-series modeling with catboost ( R Ver. )
 ## Installation
 Testing Pkg
 ```r
-devtools::install_github("mk-oh/catforecast2",   args = c("--no-multiarch"))
+devtools::install_github("mk-oh/forecast_catboost")
 ```
 

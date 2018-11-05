@@ -1,7 +1,7 @@
 Package: catforecast2
 Type: Package
 Title: Analysis using Catboost
-Version: 0.1.1
+Version: 0.1.2
 Author: c(person("mk", "oh", email = "namanic.86@gmail.com", role = c("aut", "cre"))
 Maintainer: mk <namanic.86@gmail.com>
 Description: Time-series Anlaysis using Catboost

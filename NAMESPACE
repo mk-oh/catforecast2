@@ -2,7 +2,6 @@
 
 export(Boxcox)
 export(cat.forecast)
-export(lag_xreg)
+export(cat.forecast2)
 export(lag_y)
 export(xgboost.forecast)
-export(cat.forecast2)
