@@ -12,4 +12,5 @@ RoxygenNote: 6.1.0
 Depends: R (>= 3.1.0), forecast, xgboost, catboost(>= 0.7.0)
 Imports : dplyr,zoo
 Suggests: testthat
-Built: R 3.5.1; ; 2018-11-09 02:08:46 UTC; windows
+NeedsCompilation: no
+Packaged: 2018-11-09 02:13:11 UTC; AC920387
