@@ -42,7 +42,9 @@ cat.forecast2 <- function (y,
     stop("y class check : y need to ts class")
   }
 
-  if (length(y))
+  if (length(y) < maxlag){
+    stop('Data is too short')
+  }
 
     if (!is.null(xreg)) {
       xreg <- as.matrix(xreg)
@@ -59,10 +61,10 @@ cat.forecast2 <- function (y,
   non_sale_day <- NA
 
   for ( i in 1L : length(y) ){
-    if ( i <= 14L  ) { # priod +1
+    if ( i <= 21L  ) { # priod +1
       non_sale_day[i] <- sum(non_sale[c(1L : i)] , na.rm =T)
     } else {
-      non_sale_day[i] <- sum(non_sale[c((i - 14L) : i) ] , na.rm =T) # priod
+      non_sale_day[i] <- sum(non_sale[c((i - 21L) : i) ] , na.rm =T) # priod
     }
   }
   non_sale_day <- non_sale_day[-c(1:maxlag)]
