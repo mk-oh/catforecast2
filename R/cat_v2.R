@@ -157,14 +157,14 @@ cat.forecast <- function (y,
   #### Parameter Setting - catboost
   if (is.null(params)) {
     params =   list(iterations = 1000,
-                    depth = 6,
+                    depth = 8,
                     learning_rate = 0.02,
                     l2_leaf_reg = 0.9,
                     bagging_temperature = 0.9,
-                    # random_strength = 1,
+                    random_strength = 1,
                     random_seed = 1,
-                    nan_mode = 'Min',
-                    od_type = 'Iter')
+                    nan_mode = 'Min'
+                   )
   }
 
 
