@@ -31,7 +31,7 @@ cat.forecast2 <- function (y,
                           # log = TRUE,
                           boxcox = TRUE,
                           ts_clean = TRUE,
-                          ts_lambda = 1,
+                          lambda = BoxCox.lambda(y),
                           season_type = c("dummy", "decompose", "none"),
                           verbose = TRUE, ...)  {
 
@@ -72,7 +72,7 @@ cat.forecast2 <- function (y,
 
   #### Outlier preprocess - (require : forecast package)
   if(ts_clean == TRUE) {
-    y <- tsclean(y, ts_lambda)
+    y <- tsclean(y, lambda)
   }
 
   y_temp <- y
@@ -102,9 +102,7 @@ cat.forecast2 <- function (y,
   # }
 
   #### BoxCox Translate  (require : forecast package )
-  if (boxcox == TRUE) {
-    lambda <- BoxCox.lambda(y)
-  } else {
+  if (boxcox == FALSE){
     lambda = 1
   }
 
